@@ -1,15 +1,17 @@
 package main
 
 import (
-	"github.com/speps/go-hashids"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"strings"
 	"testing"
 	"time"
-)
 
+	"github.com/speps/go-hashids"
+)
 
 type TestStruct struct {
 	requestBody        string
@@ -19,15 +21,16 @@ type TestStruct struct {
 	expectedUrl        string
 }
 type TestStruct1 struct {
-	requestParam        string
+	requestParam       string
 	expectedStatusCode int
 	responseBody       string
 	observedStatusCode int
 }
+
 const (
 	BadRequestCode     = 400
 	SuccessRequestCode = 200
-	StatusCreated = 201
+	StatusCreated      = 201
 )
 
 func DisplayTestCaseResults(functionalityName string, tests []TestStruct, t *testing.T) {
@@ -51,15 +54,17 @@ func DisplayTestCaseResults1(functionalityName string, tests []TestStruct1, t *t
 }
 
 func TestCreateShorturl(t *testing.T) {
+	go main()
+
 	url := "http://localhost:3000/"
 	var id string
 	tests := []TestStruct{
 		{``, BadRequestCode, "", 0, ""},
 		{`{"originalUrl":""}`, BadRequestCode, "", 0, ""},
-		{`{"originalUrl":"https://www.youtube.com/watch?v=CBVJTplw4cE"}`, StatusCreated, "", 0,""},
-		{`{"originalUrl":"https://www.youtube.com/watch?v=CBVJTplw4cE"}`, SuccessRequestCode, "", 0,""},
+		{`{"originalUrl":"https://www.youtube.com/watch?v=CBVJTplw4cE"}`, StatusCreated, "", 0, ""},
+		{`{"originalUrl":"https://www.youtube.com/watch?v=CBVJTplw4cE"}`, SuccessRequestCode, "", 0, ""},
 	}
-	tests1 :=[]TestStruct1{
+	tests1 := []TestStruct1{
 		{"", SuccessRequestCode, "", 0},
 		{"ABDCE", BadRequestCode, "", 0},
 	}
@@ -68,7 +73,7 @@ func TestCreateShorturl(t *testing.T) {
 		reader = strings.NewReader(testCase.requestBody) //Convert string to reader
 		request, err := http.NewRequest("POST", url, reader)
 		res, err := http.DefaultClient.Do(request)
-		if i ==2 {
+		if i == 2 {
 			hd := hashids.NewData()
 			h, _ := hashids.NewWithData(hd)
 			now := time.Now()
@@ -83,10 +88,10 @@ func TestCreateShorturl(t *testing.T) {
 		tests[i].responseBody = strings.TrimSpace(string(body))
 		tests[i].observedStatusCode = res.StatusCode
 	}
-	for j, testcase1:= range tests1{
+	for j, testcase1 := range tests1 {
 		var reader io.Reader
-		if j ==0{
-			testcase1.requestParam  = id
+		if j == 0 {
+			testcase1.requestParam = id
 		}
 		url2 := "http://localhost:3000/url/" + testcase1.requestParam
 		request, err := http.NewRequest("GET", url2, reader)
@@ -101,4 +106,12 @@ func TestCreateShorturl(t *testing.T) {
 	}
 	DisplayTestCaseResults("ShortUrl", tests, t)
 	DisplayTestCaseResults1("getByShortUrl", tests1, t)
+
+	err := os.Remove("url.json")
+	if err != nil {
+		// Handle the error if the file cannot be deleted
+		fmt.Printf("Error deleting file: %v\n", err)
+		return
+	}
+
 }
