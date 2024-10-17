@@ -3,6 +3,7 @@
    - **Run Binary**
        - ./urlShortner
     
+
    - **Short url method:**
        - url: localhost:3000/
        - body:
